@@ -4,8 +4,8 @@ from amadeus import Client, ResponseError
 from app.agents.mock_flights import mock_flights
 
 
-print('.'*50)
-print(mock_flights)
+# print('.'*50)
+# print(mock_flights)
 
 amadeus = Client(
     client_id=os.environ['AMADEUS_KEY'],

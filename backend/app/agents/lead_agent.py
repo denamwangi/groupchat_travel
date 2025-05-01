@@ -1,13 +1,16 @@
 import asyncio
-from constants import MODEL_GEMINI_2_0_FLASH, MODEL_GPT_40, MODEL_CLAUDE_SONNET, SESSION_ID, APP_NAME, USER_ID
+from app.agents.constants import MODEL_GEMINI_2_0_FLASH, MODEL_GPT_40, MODEL_CLAUDE_SONNET, SESSION_ID, APP_NAME, USER_ID
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.agents import Agent
 from google.adk.sessions import InMemorySessionService
+from google.adk.tools.tool_context import ToolContext
 from google.adk.runners import Runner
 from google.genai import types
 from app.agents.flight_agent import flight_agent
 from app.agents.hello_agent import hello_agent
+from app.agents.music_agent import music_playlist_pipeline_agent
 from app.tools.weather_tool import get_weather
+import pdb
 
 root_agent_model = MODEL_GPT_40
 
@@ -21,11 +24,13 @@ weather_agent_team = Agent(
     "1. 'hello_agent': Handles initial greetings and provides a fun fact about kenya when a user says hello."
     "Delegate all greetings to this agent"
     "2. flight_agent: handles the flight travel requests and provides flight options"
-    "If it is a greeting delegate to 'hello_agent'"
-    "if it is travel related delegate to 'flight_agent' and if it is weather related, handle the response yourself using 'get_weather' using a southern belle persona"
-    "For everything else, respond appropriately or state you cannot handle it.",
+    "3. music_playlist_pipeline_agent: uses tags based on the  destination to generate a spotify playlist for the trip"
+    "If it is music related, delegate to 'music_playlist_pipeline_agent' to generate a playlist. "
+    "If it is travel related, delegate to 'flight_agent'.\n"
+    "If it is weather related, handle the response yourself using the 'get_weather' tool.\n"
+    "For everything else, respond appropriately or state that you cannot handle it.",
     tools=[get_weather],
-    sub_agents=[hello_agent, flight_agent]
+    sub_agents=[hello_agent, flight_agent, music_playlist_pipeline_agent]
 )
 print(f" 🙂‍↔️Success! the root agent {weather_agent_team.name} has been created")
 
@@ -46,7 +51,7 @@ async def call_agent_async(query: str, runner, user_id, session_id):
                 final_response_text = event.content.parts[0].text
             elif event.actions and event.actions.escalate:
                 final_response_text = f"Agent escalated: {event.error_message} or No specific error messgae"
-            break
+            
     print(f" <<< Agent Response: {final_response_text}")
 
 async def run_team_conversation():
@@ -68,18 +73,29 @@ async def run_team_conversation():
         session_service=session_service
     )
     print(f"Runner created for agent {runner_agent_team.agent.name}")
-    await call_agent_async("Hello! I want to go from New york to Nairobi next Wednesday. What are my flight options?",
+    await call_agent_async("Hello! I want to go from New york to Florida next week May 8 2025. What are my flight options?",
                         runner=runner_agent_team,
                         user_id=USER_ID,
                         session_id=SESSION_ID)
-    await call_agent_async("What's the weather there?",
+    await  call_agent_async("What sort of music should I listen to when I go?",
                         runner=runner_agent_team,
                         user_id=USER_ID,
                         session_id=SESSION_ID)   
-    await call_agent_async("What should I wear?",
-                        runner=runner_agent_team,
-                        user_id=USER_ID,
-                        session_id=SESSION_ID)   
+    # print(var)
+    # pdb.set_trace()
+    # await call_agent_async("Hello! I want to go from New york to Nairobi next Wednesday. What are my flight options?",
+    #                     runner=runner_agent_team,
+    #                     user_id=USER_ID,
+    #                     session_id=SESSION_ID)
+    # await call_agent_async("What's the weather there?",
+    #                     runner=runner_agent_team,
+    #                     user_id=USER_ID,
+    #                     session_id=SESSION_ID)   
+    # await call_agent_async("What should I wear?",
+    #                     runner=runner_agent_team,
+    #                     user_id=USER_ID,
+    #                     session_id=SESSION_ID)   
+
 
 
 if __name__ == "__main__":
